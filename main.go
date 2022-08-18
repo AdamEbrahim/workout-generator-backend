@@ -39,5 +39,5 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/test", testingStuff)
 
-	log.Fatal(http.ListenAndServe(port, mux))
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }
