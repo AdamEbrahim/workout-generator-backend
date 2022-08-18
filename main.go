@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	//"net/http"
+	"net/http"
 	"os"
 	"github.com/joho/godotenv"
 	"errors"
@@ -27,10 +27,17 @@ func init() {
 
 }
 
+func testingStuff(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("hey the test is working")
+}
+
 func main() {
 	fmt.Println("App running")
 	port:= os.Getenv("PORT")
 	fmt.Println(port)
 
-	//log.fatal(http.ListenAndServe())
+	mux := http.NewServeMux()
+	mux.HandleFunc("/test", testingStuff)
+
+	log.Fatal(http.ListenAndServe(port, mux))
 }
