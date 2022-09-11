@@ -104,7 +104,9 @@ func main() {
 
 	gormDB.AutoMigrate(&MuscleGroupBroad{}, &Exercise{}, &PrimaryMuscle{}, &SecondaryMuscle{}, &Equipment{})
 
-	exercises := GetData()
+	/* this line gets all the exercises from API for insertion */
+	//exercises := GetData()
+
 	//fmt.Println((*exercises)[6])
 
 	/*
@@ -126,11 +128,12 @@ func main() {
 	
 	//gormDB.Create(&(*exercises))
 
-	
+	/* this creates entires in the database for each exercise */
+	/*
 	for i := range *exercises {
 		gormDB.Create(&((*exercises)[i]))
 	}
-	
+	*/
 	
 	mux := http.NewServeMux()
 	mux.HandleFunc("/test", testingStuff)
