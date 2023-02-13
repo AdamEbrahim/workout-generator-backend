@@ -10,22 +10,24 @@ import (
 	"database/sql"
 	"gorm.io/driver/postgres"
   	"gorm.io/gorm"
+	"encoding/json"
+	"github.com/lib/pq"
 
 )
 
 type Exercise struct {
 	gorm.Model
-	Name string `gorm:"uniqueIndex; not null"`
-	Descr string
-	MuscleGroupBroadName string
-	PrimaryMuscles []PrimaryMuscle `gorm:"many2many:exercise_primarymuscles;"`
-	SecondaryMuscles []SecondaryMuscle `gorm:"many2many:exercise_secondarymuscles;"`
-	Equipment []Equipment `gorm:"many2many:exercise_equipments;"`
-	Advanced string
-	Superset string
-	Intensity string
-	CompoundMovement string
-	ExerciseImages *[]string `gorm:"type:varchar(128)[]"`
+	Name string `gorm:"uniqueIndex; not null" json:"name"`
+	Descr string `json:"descr"`
+	MuscleGroupBroadName string `json:"muscleGroupBroadName"`
+	PrimaryMuscles []PrimaryMuscle `gorm:"many2many:exercise_primarymuscles;" json:"primaryMuscles"`
+	SecondaryMuscles []SecondaryMuscle `gorm:"many2many:exercise_secondarymuscles;" json:"secondaryMuscles"`
+	Equipment []Equipment `gorm:"many2many:exercise_equipments;" json:"equipment"`
+	Advanced string `json:"advanced"`
+	Superset string `json:"superset"`
+	Intensity string `json:"intensity"`
+	CompoundMovement string `json:"compoundMovement"`
+	ExerciseImages pq.StringArray `gorm:"type:varchar(128)[]" json:"exerciseImages"`
 
 }
 
@@ -75,8 +77,109 @@ func init() {
 
 }
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Headers", "*")
+}
+
 func testingStuff(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("hey the test is working")
+}
+
+
+
+
+func getExerciseDataHandler(w http.ResponseWriter, req *http.Request, db *gorm.DB) {
+	if req.Method == http.MethodGet {
+		var exercises []Exercise
+		fmt.Println("handling get all tasks at %s\n", req.URL.Path)
+		db.Find(&exercises)
+		js, err := json.Marshal(exercises)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	}
+}
+
+func getPrimaryMuscleDataHandler(w http.ResponseWriter, req *http.Request, db *gorm.DB) {
+	if req.Method == http.MethodGet {
+		var primaryMuscles []PrimaryMuscle
+		fmt.Println("handling get all tasks at %s\n", req.URL.Path)
+		db.Find(&primaryMuscles)
+		js, err := json.Marshal(primaryMuscles)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	}
+}
+
+func getSecondaryMuscleDataHandler(w http.ResponseWriter, req *http.Request, db *gorm.DB) {
+	if req.Method == http.MethodGet {
+		var secondaryMuscles []SecondaryMuscle
+		fmt.Println("handling get all tasks at %s\n", req.URL.Path)
+		db.Find(&secondaryMuscles)
+		js, err := json.Marshal(secondaryMuscles)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	}
+}
+
+func getEquipmentDataHandler(w http.ResponseWriter, req *http.Request, db *gorm.DB) {
+	if req.Method == http.MethodGet {
+		var equipment []Equipment
+		fmt.Println("handling get all tasks at %s\n", req.URL.Path)
+		db.Find(&equipment)
+		js, err := json.Marshal(equipment)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	}
+}
+
+func getMuscleGroupBroadDataHandler(w http.ResponseWriter, req *http.Request, db *gorm.DB) {
+	if req.Method == http.MethodGet {
+		var muscleGroupBroad []MuscleGroupBroad
+		fmt.Println("handling get all tasks at %s\n", req.URL.Path)
+		db.Find(&muscleGroupBroad)
+		js, err := json.Marshal(muscleGroupBroad)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	}
+}
+
+
+func getAllExerciseData(w http.ResponseWriter, req *http.Request, db *gorm.DB) {
+	enableCors(&w)
+	if req.Method == http.MethodGet {
+		var ex []Exercise
+		fmt.Println("handling get all tasks at %s\n", req.URL.Path)
+		db.Preload("PrimaryMuscles").Preload("SecondaryMuscles").Preload("Equipment").Find(&ex)
+		//fmt.Println(ex)
+		js, err := json.Marshal(ex)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	}
 }
 
 func main() {
@@ -137,7 +240,26 @@ func main() {
 	
 	mux := http.NewServeMux()
 	mux.HandleFunc("/test", testingStuff)
+	mux.HandleFunc("/GetExerciseData", func(w http.ResponseWriter, req *http.Request) {
+		getExerciseDataHandler(w, req, gormDB)
+	})
+	mux.HandleFunc("/GetPrimaryMuscleData", func(w http.ResponseWriter, req *http.Request) {
+		getPrimaryMuscleDataHandler(w, req, gormDB)
+	})
+	mux.HandleFunc("/GetSecondaryMuscleData", func(w http.ResponseWriter, req *http.Request) {
+		getSecondaryMuscleDataHandler(w, req, gormDB)
+	})
+	mux.HandleFunc("/GetEquipmentData", func(w http.ResponseWriter, req *http.Request) {
+		getEquipmentDataHandler(w, req, gormDB)
+	})
+	mux.HandleFunc("/GetMuscleGroupBroadData", func(w http.ResponseWriter, req *http.Request) {
+		getMuscleGroupBroadDataHandler(w, req, gormDB)
+	})
 
+	mux.HandleFunc("/GetAllExerciseData", func(w http.ResponseWriter, req *http.Request) {
+		getAllExerciseData(w, req, gormDB)
+	})
 
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	strengthLoopTesting(7080, 180, 90, 4, 1)
+	//log.Fatal(http.ListenAndServe(":"+port, mux))
 }
